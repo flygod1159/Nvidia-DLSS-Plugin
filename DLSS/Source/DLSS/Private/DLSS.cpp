@@ -412,8 +412,8 @@ void FDLSSModule::StartupModule()
 			}
 			else
 			{
-				checkf(GTemporalUpscaler == ITemporalUpscaler::GetDefaultTemporalUpscaler(), TEXT("GTemporalUpscaler is not set to the default upscaler. Please check that only one upscaling plugin is active."));
-				GTemporalUpscaler = DLSSUpscaler.Get();
+				checkf(ITemporalUpscaler::GetDefaultTemporalUpscaler(), TEXT("GTemporalUpscaler is not set to the default upscaler. Please check that only one upscaling plugin is active."));
+				
 			}
 		}
 	}
@@ -467,6 +467,12 @@ void FDLSSModule::StartupModule()
 		}
 	}
 
+	static auto* CVarTemporalAAAllowDownsampling = IConsoleManager::Get().FindConsoleVariable(TEXT("r.TemporalAA.AllowDownsampling"));
+	if (CVarTemporalAAAllowDownsampling != nullptr)
+	{
+		CVarTemporalAAAllowDownsampling->Set(0);
+	}
+
 	UE_LOG(LogDLSS, Log, TEXT("%s Leave"), ANSI_TO_TCHAR(__FUNCTION__));
 }
 
@@ -500,12 +506,18 @@ void FDLSSModule::ShutdownModule()
 
 		// reset the upscaler
 		{
-			GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
+			//GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
 			FDLSSUpscaler::ReleaseStaticResources();
 			DLSSUpscaler.Reset();
 		}
 
 		NGXRHIExtensions.Reset();
+	}
+
+	static auto* CVarTemporalAAAllowDownsampling = IConsoleManager::Get().FindConsoleVariable(TEXT("r.TemporalAA.AllowDownsampling"));
+	if (CVarTemporalAAAllowDownsampling != nullptr)
+	{
+		CVarTemporalAAAllowDownsampling->Set(1);
 	}
 
 	UE_LOG(LogDLSS, Log, TEXT("%s Leave"), ANSI_TO_TCHAR(__FUNCTION__));

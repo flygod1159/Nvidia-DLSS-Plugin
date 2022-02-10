@@ -12,6 +12,7 @@
 	"SupportURL": "mailto:DLSS-Support@nvidia.com",
 	"EngineVersion": "5.0.0",
 	"CanContainContent": true,
+        "EnabledByDefault": false,
 	"Installed": true,
 	"Modules": [
 		{

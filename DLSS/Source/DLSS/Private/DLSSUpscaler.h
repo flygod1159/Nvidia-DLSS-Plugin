@@ -89,14 +89,10 @@ public:
 	// Inherited via ITemporalUpscaler
 	virtual const TCHAR* GetDebugName() const final;
 
-	virtual void AddPasses(
+	virtual FOutputs AddPasses(
 		FRDGBuilder& GraphBuilder,
 		const FViewInfo& View,
-		const FPassInputs& PassInputs,
-		FRDGTextureRef* OutSceneColorTexture,
-		FIntRect* OutSceneColorViewRect,
-		FRDGTextureRef* OutSceneColorHalfResTexture,	
-		FIntRect* OutSceneColorHalfResViewRect) const final;
+		const FPassInputs& PassInputs) const final;
 
 
 	// Inherited via ICustomStaticScreenPercentage

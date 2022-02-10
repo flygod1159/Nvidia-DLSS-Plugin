@@ -268,7 +268,7 @@ void FNGXVulkanRHI::ExecuteDLSS(FRHICommandList& CmdList, const FRHIDLSSArgument
 		NGXTexture.Type = NVSDK_NGX_RESOURCE_VK_TYPE_VK_IMAGEVIEW;
 
 		// Check for VK_IMAGE_USAGE_STORAGE_BIT. Those are not directly stored but FVulkanSurface::GenerateImageCreateInfo sets the VK flag based on those UEFlags
-		NGXTexture.ReadWrite = (VulkanTexture->Surface.UEFlags & TexCreate_Presentable) || (VulkanTexture->Surface.UEFlags & TexCreate_UAV);
+		NGXTexture.ReadWrite = bool(VulkanTexture->Surface.UEFlags & TexCreate_Presentable) || bool(VulkanTexture->Surface.UEFlags & TexCreate_UAV);
 
 		NGXTexture.Resource.ImageViewInfo.ImageView = VulkanTexture->DefaultView.View;
 		NGXTexture.Resource.ImageViewInfo.Image = VulkanTexture->DefaultView.Image;

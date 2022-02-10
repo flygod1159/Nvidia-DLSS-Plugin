@@ -79,7 +79,7 @@ private:
 
 
 	// Create a gridslot for the group quality level with all the required formatting
-	SGridPanel::FSlot& MakeGridSlot(int32 InCol, int32 InRow, int32 InColSpan = 1, int32 InRowSpan = 1);
+	SGridPanel::FSlot::FSlotArguments MakeGridSlot(int32 InCol, int32 InRow, int32 InColSpan = 1, int32 InRowSpan = 1);
 
 private:
 
@@ -104,6 +104,12 @@ FReply SDLSSSettings::OnHeaderClicked(EDLSSQualityMode InQualityLevel)
 	UE_LOG(LogDLSSEditor, Log, TEXT("%s InQualityLevel = %d"), ANSI_TO_TCHAR(__FUNCTION__), InQualityLevel);
 	if (InQualityLevel != EDLSSQualityMode::NumValues)
 	{
+		static auto* TempAADownsampling = IConsoleManager::Get().FindConsoleVariable(TEXT("r.TemporalAA.AllowDownsampling"));
+		
+		if (TempAADownsampling->GetInt())
+		{
+			UE_LOG(LogDLSSEditor, Error, TEXT("Some how r.TemporalAA.AllowDownsampling is Set to % d, For DLSS plugin to work it need to be set to 0"), TempAADownsampling->GetInt());
+        }
 		const int32 ScreenPercentage = UpscalerEditor->DLSSUpscaler->GetOptimalResolutionFractionForQuality(InQualityLevel) * 100.0f;
 		
 		UpscalerEditor->OnQualityModeSelected(InQualityLevel, ViewportMenuEntryArguments);
@@ -121,14 +127,14 @@ FReply SDLSSSettings::OnHeaderClicked(EDLSSQualityMode InQualityLevel)
 	return FReply::Handled();
 }
 
-SGridPanel::FSlot& SDLSSSettings::MakeGridSlot(int32 InCol, int32 InRow, int32 InColSpan /*= 1*/, int32 InRowSpan /*= 1*/)
+SGridPanel::FSlot::FSlotArguments SDLSSSettings::MakeGridSlot(int32 InCol, int32 InRow, int32 InColSpan /*= 1*/, int32 InRowSpan /*= 1*/)
 {
 	float PaddingH = 2.0f;
 	float PaddingV = InRow == 0 ? 8.0f : 2.0f;
-	return SGridPanel::Slot(InCol, InRow)
+	return MoveTemp(SGridPanel::Slot(InCol, InRow)
 		.Padding(PaddingH, PaddingV)
 		.RowSpan(InRowSpan)
-		.ColumnSpan(InColSpan);
+		.ColumnSpan(InColSpan));
 }
 
 void SDLSSSettings::Construct(const FArguments& InArgs)
@@ -243,9 +249,12 @@ void FDLSSUpscalerEditor::SetupEditorViewFamily(FSceneViewFamily& ViewFamily, FE
 	const bool bDLSSActive = CVarDLSSEnable && (CVarDLSSEnable->GetInt() != 0);
 
 	static const auto CVarDLSSAutomationTesting = IConsoleManager::Get().FindConsoleVariable(TEXT("r.NGX.DLSS.AutomationTesting"));
+
+	static const auto* TempAADownsampling = IConsoleManager::Get().FindConsoleVariable(TEXT("r.TemporalAA.AllowDownsampling"));
+
 	const bool bDLSSActiveWithAutomation = !GIsAutomationTesting || (GIsAutomationTesting && CVarDLSSAutomationTesting && (CVarDLSSAutomationTesting->GetInt() != 0));
 
-	if ((GTemporalUpscaler == DLSSUpscaler) && bDLSSActive && bDLSSActiveWithAutomation)
+	if (DLSSUpscaler && bDLSSActive && bDLSSActiveWithAutomation && !TempAADownsampling->GetInt())
 	{
 		check(GIsEditor);
 		checkf(GCustomStaticScreenPercentage == DLSSUpscaler, TEXT("GCustomStaticScreenPercentage is not set to the DLSS upscaler. Please check that only one upscaling plugin is active."));
@@ -256,6 +265,7 @@ void FDLSSUpscalerEditor::SetupEditorViewFamily(FSceneViewFamily& ViewFamily, FE
 
 		if(DLSSViewportData->bIsDLSSEnabled && EnableDLSSInEditorViewports())
 		{
+			
 			ViewFamily.SetTemporalUpscalerInterface(DLSSUpscaler->GetUpscalerInstanceForViewFamily(DLSSUpscaler, DLSSViewportData->DLSSQualityMode));
 			// DLSS_TODO figure out what to do, should this ever be the case
 			checkf(ViewFamily.GetScreenPercentageInterface() == nullptr, TEXT("ViewFamily.GetScreenPercentageInterface() is already in use. Please check that only one upscaling plugin active is active."));
@@ -264,11 +274,12 @@ void FDLSSUpscalerEditor::SetupEditorViewFamily(FSceneViewFamily& ViewFamily, FE
 			
 			const float ResolutionFraction = DLSSViewportData->ResolutionFraction;
 			ViewFamily.SetScreenPercentageInterface(new FLegacyScreenPercentageDriver(
-				ViewFamily, ResolutionFraction,
-				/* AllowPostProcessSettingsScreenPercentage = */  false));
+				ViewFamily, ResolutionFraction));
 		}
 	}
 }
+
+
 
 bool FDLSSUpscalerEditor::GenerateEditorViewportOptionsMenuEntry(const ICustomEditorStaticScreenPercentage::FViewportMenuEntryArguments& Arguments)
 {
@@ -277,7 +288,7 @@ bool FDLSSUpscalerEditor::GenerateEditorViewportOptionsMenuEntry(const ICustomEd
 
 	static const auto CVarDLSSEnable = IConsoleManager::Get().FindConsoleVariable(TEXT("r.NGX.DLSS.Enable"));
 
-	if ((GTemporalUpscaler == DLSSUpscaler) && CVarDLSSEnable && (CVarDLSSEnable->GetInt() != 0))
+	if (DLSSUpscaler && CVarDLSSEnable && (CVarDLSSEnable->GetInt() != 0))
 	{
 		check(GIsEditor);
 		checkf(GCustomStaticScreenPercentage == DLSSUpscaler, TEXT("GCustomStaticScreenPercentage is not set to the DLSS upscaler. Please check that only one upscaling plugin is active."));

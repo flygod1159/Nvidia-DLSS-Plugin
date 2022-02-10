@@ -64,13 +64,15 @@ public:
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, DepthTexture)
 		SHADER_PARAMETER_SAMPLER(SamplerState, DepthTextureSampler)
 
-		SHADER_PARAMETER(FVector2D, TemporalJitterPixels)
+		SHADER_PARAMETER(FVector2f, TemporalJitterPixels)
 
 		SHADER_PARAMETER_STRUCT_REF(FViewUniformShaderParameters, View)
 		
 		// Output images
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(Texture2D, OutVelocityCombinedTexture)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, OutVelocityCombinedTexture)
 		SHADER_PARAMETER_STRUCT(FScreenPassTextureViewportParameters, CombinedVelocity)
+
+		
 
 	END_SHADER_PARAMETER_STRUCT()
 };
@@ -129,7 +131,7 @@ FRDGTextureRef AddVelocityCombinePass(
 
 	// various state
 	{
-		PassParameters->TemporalJitterPixels = View.TemporalJitterPixels;
+		PassParameters->TemporalJitterPixels = (FVector2f)View.TemporalJitterPixels;
 		PassParameters->View = View.ViewUniformBuffer;
 	}
 
