@@ -439,7 +439,7 @@ FDLSSOutputs FDLSSUpscaler::AddDLSSPass(
 		}
 
 		const FVector2D JitterOffset = View.TemporalJitterPixels;
-		const float DeltaWorldTime = View.Family->DeltaWorldTime;
+		const FGameTime DeltaWorldTime = View.Family->Time;
 
 		const float PreExposure = View.PreExposure;
 		const bool bUseAutoExposure = CVarNGXDLSSAutoExposure.GetValueOnRenderThread() != 0;
@@ -472,7 +472,7 @@ FDLSSOutputs FDLSSUpscaler::AddDLSSPass(
 
 			DLSSArguments.MotionVectorScale = FVector2D(1.0f, 1.0f);
 			DLSSArguments.bHighResolutionMotionVectors = Inputs.bHighResolutionMotionVectors;
-			DLSSArguments.DeltaTime = DeltaWorldTime;
+			DLSSArguments.DeltaTime = DeltaWorldTime.GetDeltaWorldTimeSeconds();
 			DLSSArguments.bReleaseMemoryOnDelete = bReleaseMemoryOnDelete;
 
 			DLSSArguments.PerfQuality = NGXPerfQuality;
